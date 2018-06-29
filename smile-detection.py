@@ -22,12 +22,13 @@ lineType = 2
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 smile_cascade = cv2.CascadeClassifier('haarcascade_smile.xml')
+eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
-def detect(img):
+def detect(gray, img):
     '''
     Script to label a colored image
     '''
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    
     faces = face_cascade.detectMultiScale(gray,1.3,5)
     
     if len(faces) == 0:
@@ -41,17 +42,20 @@ def detect(img):
         # for each face detected, look for a smile
         roi_g = gray[x:x+width, y:y+height]
         roi_c = img[x:x+width, y:y+height]
-        smile = smile_cascade.detectMultiScale(roi_g,1.1,3)
+        smile = smile_cascade.detectMultiScale(roi_g,1.4,20)
+        eyes = eye_cascade.detectMultiScale(roi_g,1.1,3)
         
         if len(smile):
             smile = [smile[0]] # Truncates array if multiple smiles detected
             cv2.putText(img,'SMILE DETECTED', posS, font, fScale/2,fColorG,lineType)
         else:
             cv2.putText(img,'NO SMILE DETECTED', posS, font, fScale/2,fColorB,lineType)
+            
+        for ex, ey, ewidth, eheight in eyes:
+            cv2.rectangle(roi_c, (ex, ey), (ex+ewidth, ey+eheight),(92, 94, 234), 2)
 
         for sx, sy, swidth, sheight in smile:
-            
-            cv2.rectangle(roi_c, (sx,sy), (sx+swidth, sy+sheight), (99, 204, 249), 2)
+            cv2.rectangle(roi_c, (sx,sy), (sx+swidth, sy+sheight), (49, 204, 219), 2)
     
     return img
 
@@ -60,7 +64,8 @@ video_cap = cv2.VideoCapture(0)
 
 while True:
     _ , frame = video_cap.read()
-    canvas = detect(frame)
+    gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+    canvas = detect(gray,frame)
     cv2.imshow('Video', canvas)
     
     if cv2.waitKey(1) & 0xFF == ord('a'):
